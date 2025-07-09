@@ -1,8 +1,8 @@
 import type { Pool } from 'pg'
-import { createRouter } from '../app.ts'
-import { handleDbError } from '../util/handleDbError.ts'
-import { formatInsert, formatUpdate } from '../util/queryHelper.ts'
-import { validateInput } from '../util/validateInput.ts'
+import { createRouter } from '@/app'
+import { handleDbError } from '@/util/handleDbError'
+import { formatInsert, formatUpdate } from '@/util/queryHelper'
+import { validateInput } from '@/util/validateInput'
 
 export const crudEndpoints = (pool: Pool, tableName: string) => {
   const router = createRouter()
@@ -39,7 +39,7 @@ export const crudEndpoints = (pool: Pool, tableName: string) => {
     const [messages, statusCode] = await validateInput(
       context,
       tableName,
-      'UPDATE',
+      'INSERT',
     )
 
     if (statusCode >= 400) {

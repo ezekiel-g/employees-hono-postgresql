@@ -1,12 +1,20 @@
 import type { Context } from 'hono'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi }
-  from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from 'bun:test'
 import { ZodError } from 'zod'
-import { handleDbError } from '../../util/handleDbError.js'
+import { handleDbError } from '@/util/handleDbError'
 
 describe('handleDbError', () => {
   let context: Context
   const columnNames = ['email', 'username', 'password']
+  let originalConsoleError: typeof console.error
 
   const runTest = (
     errorInput: unknown,
@@ -22,15 +30,19 @@ describe('handleDbError', () => {
     expect(result).toBeDefined()
   }
 
-  beforeAll(() => vi.spyOn(console, 'error').mockImplementation(() => {}))
-
-  beforeEach(() => {
-    context = {
-      json: vi.fn().mockReturnValue({}),
-    } as unknown as Context
+  beforeAll(() => {
+    originalConsoleError = console.error
+    console.error = mock(() => {})
   })
 
-  afterAll(() => vi.restoreAllMocks())
+  beforeEach(() => {
+    context = { json: mock(() => ({})) } as unknown as Context
+  })
+
+  afterAll(() => {
+    console.error = originalConsoleError
+    mock.restore()
+  })
 
   it('handles ZodError with multiple validation errors', () => {
     const zodError = new ZodError([

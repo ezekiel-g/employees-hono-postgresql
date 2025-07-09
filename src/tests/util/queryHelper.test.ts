@@ -1,19 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { formatInsert, formatUpdate } from '../../util/queryHelper.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { formatInsert, formatUpdate } from '@/util/queryHelper'
 
 describe('queryHelper', () => {
   let mockContext: any
 
   beforeEach(() => {
-    vi.clearAllMocks()
-
-    mockContext = { req: { json: vi.fn(), param: vi.fn() } }
+    mockContext = {
+      req: {
+        json: mock(() => ({})),
+        param: mock(() => ({})),
+      },
+    }
   })
 
   describe('formatInsert', () => {
     it('formats insert query with camel case input', async () => {
-      const camelCaseData = { firstName: 'Michael', lastName: 'Smith', age: 30 }
-      mockContext.req.json.mockResolvedValue(camelCaseData)
+      const camelCaseData = {
+        firstName: 'Michael',
+        lastName: 'Smith',
+        age: 30,
+      }
+      mockContext.req.json.mockReturnValue(camelCaseData)
 
       const [columnNames, queryParams, placeholders]
         = await formatInsert(mockContext)
@@ -24,7 +31,7 @@ describe('queryHelper', () => {
     })
 
     it('returns empty values for empty input', async () => {
-      mockContext.req.json.mockResolvedValue({})
+      mockContext.req.json.mockReturnValue({})
 
       const [columnNames, queryParams, placeholders]
         = await formatInsert(mockContext)
@@ -37,8 +44,12 @@ describe('queryHelper', () => {
 
   describe('formatUpdate', () => {
     it('formats update query excluding id field', async () => {
-      const camelCaseData = { id: 1, firstName: 'Michael', lastName: 'Smith' }
-      mockContext.req.json.mockResolvedValue(camelCaseData)
+      const camelCaseData = {
+        id: 1,
+        firstName: 'Michael',
+        lastName: 'Smith',
+      }
+      mockContext.req.json.mockReturnValue(camelCaseData)
       mockContext.req.param.mockReturnValue('1')
 
       const [columnNames, setClause, queryParams]
@@ -51,7 +62,7 @@ describe('queryHelper', () => {
 
     it('returns empty values for input empty except id', async () => {
       const camelCaseData = { id: 1 }
-      mockContext.req.json.mockResolvedValue(camelCaseData)
+      mockContext.req.json.mockReturnValue(camelCaseData)
       mockContext.req.param.mockReturnValue('1')
 
       const [columnNames, setClause, queryParams]

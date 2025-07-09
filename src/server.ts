@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server'
-import { createApp } from './app.js'
-import { connectToDb, disconnectFromDb } from './db/db.js'
+import { createApp } from '@/app'
+import { connectToDb, disconnectFromDb } from '@/db/db'
 
 const pool = await connectToDb()
 
