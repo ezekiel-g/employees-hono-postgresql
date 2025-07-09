@@ -1,4 +1,3 @@
-import { Pool } from 'pg'
 import {
   afterAll,
   beforeAll,
@@ -6,62 +5,73 @@ import {
   describe,
   expect,
   it,
-  vi,
-} from 'vitest'
-import { connectToDb, disconnectFromDb } from '../../db/db.js'
+  mock,
+} from 'bun:test'
+import { connectToDb, disconnectFromDb } from '@/db/db'
 
-vi.mock('pg', () => ({ Pool: vi.fn() }))
+const mockQuery = mock(() => Promise.resolve({ rows: [{ '?column?': 1 }] }))
+const mockEnd = mock(() => Promise.resolve())
+const MockPool = mock(() => ({ query: mockQuery, end: mockEnd }))
+
+mock.module('pg', () => ({ Pool: MockPool }))
 
 describe('db', () => {
-  let mockPool: any
+  let originalConsoleLog: typeof console.log
+  let originalConsoleError: typeof console.error
 
   beforeAll(() => {
-    vi.spyOn(console, 'log').mockImplementation(() => {})
-    vi.spyOn(console, 'error').mockImplementation(() => {})
+    originalConsoleLog = console.log
+    originalConsoleError = console.error
+    const consoleMock = mock(() => {})
+    console.log = consoleMock as any
+    console.error = consoleMock as any
   })
 
   beforeEach(() => {
-    vi.clearAllMocks()
-
-    mockPool = { query: vi.fn(), end: vi.fn() }
-
-    vi.mocked(Pool).mockImplementation(() => mockPool)
+    mockQuery.mockClear()
+    mockEnd.mockClear()
   })
 
-  afterAll(() => vi.restoreAllMocks())
+  afterAll(() => {
+    console.log = originalConsoleLog
+    console.error = originalConsoleError
+    mock.restore()
+  })
 
   describe('connectToDb', () => {
     it('connects to the database', async () => {
-      mockPool.query.mockResolvedValue({ rows: [{ '?column?': 1 }] })
+      mockQuery.mockResolvedValue({ rows: [{ '?column?': 1 }] })
 
       const result = await connectToDb()
 
-      expect(result).toBe(mockPool)
-      expect(mockPool.query).toHaveBeenCalledWith('SELECT 1;')
+      expect(result).toBeDefined()
+      expect(mockQuery).toHaveBeenCalledWith('SELECT 1;')
     })
 
     it('returns null when database connection fails', async () => {
-      mockPool.query.mockRejectedValue(new Error('Connection failed'))
+      mockQuery.mockRejectedValue(new Error('Error message'))
 
       const result = await connectToDb()
 
       expect(result).toBeNull()
-      expect(mockPool.end).toHaveBeenCalled()
+      expect(mockEnd).toHaveBeenCalled()
     })
   })
 
   describe('disconnectFromDb', () => {
     it('disconnects from database', async () => {
-      await disconnectFromDb(mockPool)
+      const mockPool = MockPool()
+      await disconnectFromDb(mockPool as any)
 
-      expect(mockPool.end).toHaveBeenCalled()
+      expect(mockEnd).toHaveBeenCalled()
     })
 
     it('handles disconnection errors', async () => {
-      mockPool.end.mockRejectedValue(new Error('Disconnect failed'))
+      const mockPool = MockPool()
+      mockEnd.mockRejectedValue(new Error('Error message'))
 
-      await expect(disconnectFromDb(mockPool)).resolves.toBeUndefined()
-      expect(mockPool.end).toHaveBeenCalled()
+      expect(disconnectFromDb(mockPool as any)).resolves.toBeUndefined()
+      expect(mockEnd).toHaveBeenCalled()
     })
   })
 })

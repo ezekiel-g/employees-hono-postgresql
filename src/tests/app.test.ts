@@ -1,13 +1,14 @@
 import type { Pool } from 'pg'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { logger } from 'hono/logger'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createApp } from '../app.ts'
-import { tableNames } from '../util/zodHelper.js'
+import { createApp } from '@/app'
+import { tableNames } from '@/util/zodHelper'
 
-vi.mock('hono/logger')
-vi.mock('hono/cors')
+const MockLogger = mock(() => ({}))
+const MockCors = mock(() => ({}))
+
+mock.module('hono/logger', () => ({ logger: MockLogger }))
+mock.module('hono/cors', () => ({ cors: MockCors }))
 
 describe('createApp', () => {
   let pool: Pool
@@ -23,11 +24,11 @@ describe('createApp', () => {
   })
 
   it('uses logger middleware', () => {
-    expect(logger).toHaveBeenCalled()
+    expect(MockLogger).toHaveBeenCalled()
   })
 
   it('uses CORS middleware with correct settings', () => {
-    expect(cors).toHaveBeenCalledWith(
+    expect(MockCors).toHaveBeenCalledWith(
       expect.objectContaining({
         origin: process.env.FRONT_END_URL ?? '',
         allowHeaders: ['Content-Type'],

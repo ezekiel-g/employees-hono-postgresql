@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { InsertEmployeeSchema } from '../../zod/employee'
+import { beforeEach, describe, expect, it } from 'bun:test'
+import { InsertEmployeeSchema } from '@/zod/employee'
 
 describe('employee', () => {
   let employeeData: any

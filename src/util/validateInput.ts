@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 import type { ZodIssue } from 'zod'
-import { getSchemaFunction } from './zodHelper.js'
+import { getSchemaFunction } from '@/util/zodHelper'
 
 export const validateInput = async (
   context: Context,

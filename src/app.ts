@@ -2,8 +2,8 @@ import type { Pool } from 'pg'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import { crudEndpoints } from './endpoints/crudEndpoints.ts'
-import { tableNames } from './util/zodHelper.ts'
+import { crudEndpoints } from '@/endpoints/crudEndpoints'
+import { tableNames } from '@/util/zodHelper'
 
 export const createRouter = () => new Hono({ strict: false })
 
@@ -19,7 +19,12 @@ export const createApp = (pool: Pool) => {
   }))
 
   for (let i = 0; i < tableNames.length; i++) {
-    app.route(`/api/v1/${tableNames[i]}`, crudEndpoints(pool, tableNames[i]))
+    const tableName = tableNames[i]
+
+    if (!tableName)
+      continue
+
+    app.route(`/api/v1/${tableName}`, crudEndpoints(pool, tableName))
   }
 
   return app

@@ -1,30 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { validateInput } from '../../util/validateInput.js'
-import { getSchemaFunction } from '../../util/zodHelper.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { validateInput } from '@/util/validateInput'
 
-vi.mock('../../util/zodHelper.js', () => ({
-  getSchemaFunction: vi.fn(),
+const MockGetSchemaFunction = mock(() => ({}))
+
+mock.module('@/util/zodHelper', () => ({
+  getSchemaFunction: MockGetSchemaFunction,
 }))
 
 describe('validateInput', () => {
   let mockContext: any
-  let mockGetSchemaFunction: any
   let requestBody: any
   let mockSchema: any
 
   beforeEach(() => {
-    vi.clearAllMocks()
-
-    mockContext = { req: { json: vi.fn() } }
-    mockGetSchemaFunction = vi.mocked(getSchemaFunction)
-
+    mockContext = { req: { json: mock(() => ({})) } }
     requestBody = { firstName: 'Michael', lastName: 'Smith' }
-    mockSchema = { safeParse: vi.fn().mockReturnValue({ success: true }) }
+    mockSchema = { safeParse: mock(() => ({ success: true })) }
   })
 
   it('returns success for valid input', async () => {
-    mockContext.req.json.mockResolvedValue(requestBody)
-    mockGetSchemaFunction.mockResolvedValue(mockSchema)
+    mockContext.req.json.mockReturnValue(requestBody)
+    MockGetSchemaFunction.mockReturnValue(mockSchema)
 
     const [messages, statusCode]
       = await validateInput(mockContext, 'employees', 'INSERT')
@@ -37,14 +33,13 @@ describe('validateInput', () => {
   it('returns validation errors for invalid input', async () => {
     requestBody = { firstName: '' }
     mockSchema = {
-      safeParse: vi.fn().mockReturnValue({
+      safeParse: mock(() => ({
         success: false,
         error: { errors: [{ message: 'required' }] },
-      }),
+      })),
     }
-
-    mockContext.req.json.mockResolvedValue(requestBody)
-    mockGetSchemaFunction.mockResolvedValue(mockSchema)
+    mockContext.req.json.mockReturnValue(requestBody)
+    MockGetSchemaFunction.mockReturnValue(mockSchema)
 
     const [messages, statusCode]
       = await validateInput(mockContext, 'employees', 'INSERT')
@@ -55,8 +50,8 @@ describe('validateInput', () => {
   })
 
   it('returns error when no schema function found', async () => {
-    mockContext.req.json.mockResolvedValue(requestBody)
-    mockGetSchemaFunction.mockResolvedValue(null)
+    mockContext.req.json.mockReturnValue(requestBody)
+    MockGetSchemaFunction.mockReturnValue(null as any)
 
     const [messages, statusCode]
       = await validateInput(mockContext, 'nonexistent', 'INSERT')
@@ -68,7 +63,7 @@ describe('validateInput', () => {
   it('handles multiple validation errors', async () => {
     requestBody = { firstName: '', lastName: '' }
     mockSchema = {
-      safeParse: vi.fn().mockReturnValue({
+      safeParse: mock(() => ({
         success: false,
         error: {
           errors: [
@@ -76,11 +71,10 @@ describe('validateInput', () => {
             { message: 'Column B required' },
           ],
         },
-      }),
+      })),
     }
-
-    mockContext.req.json.mockResolvedValue(requestBody)
-    mockGetSchemaFunction.mockResolvedValue(mockSchema)
+    mockContext.req.json.mockReturnValue(requestBody)
+    MockGetSchemaFunction.mockReturnValue(mockSchema)
 
     const [messages, statusCode]
       = await validateInput(mockContext, 'employees', 'UPDATE')
